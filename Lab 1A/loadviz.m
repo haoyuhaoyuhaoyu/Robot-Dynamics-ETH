@@ -25,3 +25,15 @@ set(gca,'CameraPosition',  1e-3*[2679.17 -4731.06 3838.21], ...
 
 %%
 % EOF
+
+% Generate a random joint state vector (array)
+q = rand(6,1);
+% Provide random joint state to the ABB IB120 object
+abbRobot.setJointPositions(q);
+
+pause(1);
+% Generate a random joint state vector (array)
+q = rand(6,1);
+
+% Provide random joint state to the ABB IB120 object
+abbRobot.setJointPositions(q);

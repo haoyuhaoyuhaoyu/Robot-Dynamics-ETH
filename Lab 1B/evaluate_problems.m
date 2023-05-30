@@ -17,7 +17,7 @@ fprintf('Evaluating user implementations vs. solutions... \n')
 % Evaluate functions with q as input
 for fun_cell = {'jointToPosJac', ...
                 'jointToRotJac'}
-    fun = fun_cell{:}; % Read string from cell
+    fun = fun_cell{:}; % Read string from cell 
     correct = 0;
     for i = 1:N
         q = randn(6,1);
