@@ -16,7 +16,7 @@ jac = generate_jac(gen_cor, kin, params);
 
 %% Generate Equations of Motion
 
-eom = generate_eom_solution(gen_cor, kin, params, jac);
+eom = generate_eom(gen_cor, kin, params, jac);
 
 %%
 % EOF

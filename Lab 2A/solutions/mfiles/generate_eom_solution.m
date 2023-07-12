@@ -1,5 +1,5 @@
 % generate equations of motion
-function eom = generate_eom(gen_cor, kin, dyn, jac)
+function eom = generate_eom_solution(gen_cor, kin, dyn, jac)
 % By calling:
 %   eom = generate_eom(gen_cor, kin, dyn, jac)
 % a struct 'eom' is returned that contains the matrices and vectors
@@ -24,72 +24,93 @@ I_Jr = jac.I_Jr;        % CoM Rotational Jacobian in frame I (6x1 cell)->(3x6 sy
 eom.M = sym(zeros(6,6));
 eom.g = sym(zeros(6,1));
 eom.b = sym(zeros(6,1));
-eom.hamiltonian = sym(zeros(5,1));
+eom.hamiltonian = sym(zeros(1,1));
 
 %% Compute mass matrix
 fprintf('Computing mass matrix M... ');
-% TODO: Implement M = ...;
 M = sym(zeros(6,6));
-for i = 1:length(phi)
-    M = M + I_Jp_s{i}'*m{i}*I_Jp_s{i} + I_Jr{i}'*R_Ik{i}*k_I_s{i}*R_Ik{i}'*I_Jr{i};
+for k = 1:length(phi)
+    M = M + m{k}*I_Jp_s{k}'*I_Jp_s{k} ...
+          + I_Jr{k}'*R_Ik{k}*k_I_s{k}*R_Ik{k}'*I_Jr{k};
+end
+
+% Use symmetry of M matrix to make computation time shorter
+fprintf('simplifying... ');
+for k = 1:length(phi)
+    for h = k:length(phi)
+        m_kh = simplify(M(k,h));
+        if h == k
+            M(k,h) = m_kh;
+        else
+            M(k,h) = m_kh;
+            M(h,k) = m_kh;
+        end
+    end
 end
 fprintf('done!\n');
 
 
 %% Compute gravity terms
 fprintf('Computing gravity vector g... ');
-% TODO: Implement g = ...;
-g = sym(zeros(6,1));
-for i = 1:length(phi)
-    g = g - I_Jp_s{i}'*m{i}*I_g_acc;
+enPot = sym(0);
+for k=1:length(phi)
+    enPot = enPot - m{k}*I_g_acc'*[eye(3) zeros(3,1)]*T_Ik{k}*[k_r_ks{k};1];
 end
+g = jacobian(enPot, phi)';
+
+% Alternative solution.
+%g = sym(zeros(6,1));
+%for k=1:length(phi)
+%    g = g - m{k}* I_Jp_s{k}'* I_g_acc;
+%end
+
+fprintf('simplifying... ');
+g = simplify(g); % Allow more time for more simplified solution
 fprintf('done!\n');
+
 
 
 %% Compute nonlinear terms vector
 fprintf('Computing coriolis and centrifugal vector b and simplifying... ');
-% TODO: Implement b = ...;
 b = sym(zeros(6,1));
-for i = 1:length(phi)
-    I_k_I_s = R_Ik{i}*k_I_s{i}*R_Ik{i}';
-    dJp_s = dAdt(I_Jp_s{i}, phi, dphi);
-    dJr_s = dAdt(I_Jr{i}, phi, dphi);
-    omega_i = I_Jr{i}*dphi;
-    b = b + I_Jp_s{i}'*m{i}*dJp_s*dphi + ...
-        I_Jr{i}'*(I_k_I_s*dJr_s*dphi + cross(omega_i, I_k_I_s*omega_i));
+for k=1:6
+    fprintf('b%i... ',k);
+    dJp_s = simplify(dAdt(jac.I_Jp_s{k},gen_cor.phi, gen_cor.dphi));
+    dJr_s = simplify(dAdt(jac.I_Jr{k},gen_cor.phi, gen_cor.dphi));
+    omega_i = simplify(jac.I_Jr{k}*gen_cor.dphi);
+    I_sk = simplify(R_Ik{k} * k_I_s{k} * R_Ik{k}');
+        
+    b = b + simplify(I_Jp_s{k}' * m{k} * dJp_s * dphi) + ...
+            simplify(I_Jr{k}' * I_sk * dJr_s * dphi) + ...
+            simplify(I_Jr{k}' * cross( omega_i , I_sk * omega_i));
 end
 fprintf('done!\n');
 
 
 %% Compute energy
 fprintf('Computing total energy... ');
-% TODO: Implement hamiltonian, enPot, enKin = ...;
-hamiltonian = sym(zeros(1,1));
-enPot = sym(0);
-%enKin = sym(zeros(1,1));
-
 enKin = 0.5*dphi'*M*dphi;
-for i = 1:length(phi)
-    enPot = enPot - m{i}*I_g_acc'*[eye(3), zeros(3,1)]*T_Ik{i}*[k_r_ks{i};1];
-end
 hamiltonian = enKin + enPot;
+fprintf('simplifying... ');
+hamiltonian = simplify(hamiltonian); 
 fprintf('done!\n');
 
 
 %% Generate matlab functions
+
 fname = mfilename;
 fpath = mfilename('fullpath');
 dpath = strrep(fpath, fname, '');
 
 fprintf('Generating eom scripts... ');
 fprintf('M... ');
-matlabFunction(M, 'vars', {phi}, 'file', strcat(dpath,'/M_fun'), 'Optimize', false);
+matlabFunction(M, 'vars', {phi}, 'file', strcat(dpath,'/M_fun_solution'), 'Optimize', true);
 fprintf('g... ');
-matlabFunction(g, 'vars', {phi}, 'file', strcat(dpath,'/g_fun'), 'Optimize', false);
+matlabFunction(g, 'vars', {phi}, 'file', strcat(dpath,'/g_fun_solution'), 'Optimize', true);
 fprintf('b... ');
-matlabFunction(b, 'vars', {phi, dphi}, 'file', strcat(dpath,'/b_fun'), 'Optimize', false);
+matlabFunction(b, 'vars', {phi, dphi}, 'file', strcat(dpath,'/b_fun_solution'), 'Optimize', true);
 fprintf('hamiltonian... ');
-matlabFunction(hamiltonian, 'vars', {phi, dphi}, 'file', strcat(dpath,'/hamiltonian_fun'), 'Optimize', false);
+matlabFunction(hamiltonian, 'vars', {phi, dphi}, 'file', strcat(dpath,'/hamiltonian_fun_solution'), 'Optimize', true);
 fprintf('done!\n');
 
 
