@@ -18,7 +18,7 @@ catch % If it doesn't work, open a new visualization instance
     % Def:     [grav, h_B, l_B, l_FS, l_FT, l_HA, l_LA, l_RS, l_RT, l_UA, m_B, m_FS, m_FT, m_HA, m_LA, m_RS, m_RT, m_UA, r_EE, r_FF, r_FT,  r_HA,  r_LA,  r_RF, r_RT,  r_UA,  w_B]
     mparams  = [9.81  0.1  0.6  0.3   0.3   0.15  0.3   0.3   0.3   0.3   10.0 0.5   0.5   0.1   0.5   0.5   0.5   0.5   0.02  0.02  0.015  0.015  0.015  0.02  0.015  0.015  0.2].';
     robotmdl.parameters.values = mparams;
-    
+%%    
     % Visualization configurations
     fontsize = 10;
     csfscale = 0.1;
@@ -84,10 +84,12 @@ for t = 0:dt_sim:total_sim_time
     % Integrate the system dynamics - updates state at dt_sim increments.
     ddq = ccfd(robotmdl, x, u, F_EE);
     x = x + [x(11:end); ddq]*dt_sim;
-
+    
+    
     % Update torques from controller - applies zero-order hold.
     if t-ctrlT > dt_ctrl
         u = controller(robotmdl, t, x);
+        test_dyn = check_floating_base_dynamics(robotmdl, x);
         ctrlT = t;
     end
     
@@ -98,8 +100,7 @@ for t = 0:dt_sim:total_sim_time
         if t > toc(totT)
             pause(t - toc(totT));
         end
-    end
-    
+    end    
 end
 
 %% EOF
