@@ -43,10 +43,10 @@ dx = 0.8;
 
 % Set the controller to use
 % controller = @jointspace_pid_control;
-% controller = @floating_base_control;
+%controller = @floating_base_control;
 % controller = @floating_base_control_solution;
-% controller = @hybrid_force_motion_control;
-controller = @hybrid_force_motion_control_solution;
+ controller = @hybrid_force_motion_control;
+% controller = @hybrid_force_motion_control_solution;
 
 % Control frequency (Hz)
 ctrlfreq = 400;
@@ -58,7 +58,7 @@ x = xinit;
 u = zeros(7,1);
 
 % Sets the total duration of the simulation experiment.
-total_sim_time = 30.0;
+total_sim_time = 10.0;
 
 % Set to < 1.0 for running simulation in slow-motion.
 real_time_factor = 1.0;

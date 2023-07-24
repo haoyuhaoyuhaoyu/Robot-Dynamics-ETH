@@ -73,24 +73,30 @@ f_star_EE = [-0.7, 0, 0]';
 % x_opt = [ddq', f_c_xz', tau', f_EE']
 
 % Equations of motions
-A_eom = [];
-b_eom = [];
+A_eom = [M, -J_c', -S', -J_EE'];
+b_eom = [-b-g];
 
 % No foot-contact motions
-A_c = [];
-b_c = [];
+A_c = [J_c, zeros(4,4), zeros(4,7), zeros(4,3)];
+b_c = [-dJ_c*dq];
 
 % Constant EE position in z direction
-A_pos_ee = [];
-b_pos_ee = [];
+kp_ee = 5;
+kd_ee = 2*sqrt(kp_ee);
+dw_ee = kp_ee*(p_star_EE_z - p_EE(2)) + kd_ee*(0 - w_EE(2));
+A_pos_ee = [J_EE(2,:), zeros(1,4), zeros(1,7), zeros(1,3)];
+b_pos_ee = [dw_ee-dJ_EE(2,:)*dq];
 
 % EE wrench 
-A_force_ee = [];
-b_force_ee = [];
+A_force_ee = [zeros(3,10), zeros(3,4), zeros(3,7), eye(3)];
+b_force_ee = [f_star_EE];
 
 % Body motion
-A_b = [];
-b_b = [];
+kp_b = 2;
+kd_b = 2*sqrt(kp_b);
+dw_star_B = kp_b*(p_star_B - p_B) + kd_b*(w_star_B - w_B);
+A_b = [J_B, zeros(3, 4), zeros(3, 7), zeros(3, 3)];
+b_b = dw_star_B - dJ_B*dq;%dim=3
 
 %% Additional Tasks
 

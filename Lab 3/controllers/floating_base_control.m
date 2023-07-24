@@ -71,20 +71,26 @@ w_star_EE = zeros(3,1);
 % x_opt = [ddq', f_c_xz', tau']
 
 % Equations of motions
-A_eom = [];
-b_eom = [];
+A_eom = [M, -J_c', -S'];
+b_eom = [-b-g];
 
 % No foot-contact motions
-A_c = [];
-b_c = [];
+A_c = [J_c, zeros(4,4), zeros(4,7)];
+b_c = [-dJ_c*dq];
 
 % Body motion
-A_b = [];
-b_b = [];
+kp_b = 10;
+kd_b = 2*sqrt(kp_b);
+dw_star_B = kp_b*(p_star_B - p_B) + kd_b*(w_star_B - w_B);
+A_b = [J_B, zeros(3,4), zeros(3,7)];
+b_b = [dw_star_B - dJ_B*dq];
 
 % No end-effector motion
-A_ee = [];
-b_ee = [];
+kp_ee = 5;
+kd_ee = 2*sqrt(kp_ee);
+dw_ee = kp_ee*(p_star_EE - p_EE) + kd_ee*(w_star_EE - w_EE);
+A_ee = [J_EE, zeros(3,4), zeros(3,7)];
+b_ee = [dw_ee-dJ_EE*dq];
 
 %% Additional Tasks
 
